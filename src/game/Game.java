@@ -13,6 +13,8 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Intersector;
 import java.util.Iterator;
 
 
@@ -32,6 +34,7 @@ public class Game implements ApplicationListener, InputProcessor {
 	private int focusedEnemy = 0;
 	private Vector2 targetPos;
 	private Music music;
+	private ShapeRenderer shapeRenderer;
 
 	@Override
 	public void create() {
@@ -49,6 +52,8 @@ public class Game implements ApplicationListener, InputProcessor {
 		
 		// setup the sprite batch
 		batch = new SpriteBatch();
+		// the shape renderer for health bars
+		shapeRenderer = new ShapeRenderer();
 		
 		// setup the grass tiles to render the background
 		grassTiles = new Array<Tile>();
@@ -63,7 +68,7 @@ public class Game implements ApplicationListener, InputProcessor {
 		Gdx.input.setInputProcessor(this);
 		// setup the enemies
 		enemies = new Array<Sprite>();
-		Sprite enemy = new Bat(5 * 32, 5 * 32, 32, 32, characterImage);
+		Sprite enemy = new Bat(5 * 32, 5 * 32, characterImage);
 		enemies.add(enemy);
 		targetPos = new Vector2(enemy.getX(), enemy.getY());
 	}
@@ -142,6 +147,20 @@ public class Game implements ApplicationListener, InputProcessor {
 		
 		// check if focused enemy needs to move
 		enemy.moveTo((int) targetPos.x, (int) targetPos.y);
+		hero.drawHealthBar(shapeRenderer);
+		// check if enemy collides with the hero
+		if(Intersector.intersectRectangles(hero.getCollisionRectangle(), enemy.getCollisionRectangle())) {
+			if(!enemy.isColliding && !hero.isColliding) {
+				enemy.health--;
+				hero.health--;
+			}
+			enemy.isColliding = true;
+			hero.isColliding = true;
+		}
+		else if(enemy.isColliding || hero.isColliding) {
+			enemy.isColliding = false;
+			hero.isColliding = false;
+		}
 		
 		// drawing logic
 		batch.setProjectionMatrix(camera.combined);
@@ -151,13 +170,42 @@ public class Game implements ApplicationListener, InputProcessor {
 		stateTime += Gdx.graphics.getDeltaTime();
 		hero.render(stateTime, batch);
 		Iterator<Sprite> it = enemies.iterator();
+		int removed = 0;
+		// go through the spawned enemies, and check if a dead one needs to be removed
 		while(it.hasNext()) {
 			Sprite e = it.next();
-			e.render(stateTime, batch);
+			if(e.health <= 0) {
+				it.remove();
+				removed++;
+			}
+			else {
+				e.render(stateTime, batch);
+			}
 		}
+		// add a new enemy to replace the lost ones
+		for(int i = 0; i < removed; i++) {
+			enemies.add(new Bat(MathUtils.random(1, 20) * 32, MathUtils.random(1, 20) * 32, characterImage));
+		}
+		// reset the target position
+		if(removed > 0) {
+			focusedEnemy = 0;
+			this.targetPos = new Vector2(enemies.get(0).getX(), enemies.get(0).getY());
+		}
+		
+		// end game if hero dies
+		if(hero.health <= 0) {
+			Gdx.app.exit();
+		}
+		
 		// font.draw(batch, "x: " + targetPos.x + " y: " + targetPos.y, 10, 50);
 		
 		batch.end();
+		hero.drawHealthBar(shapeRenderer);
+		it = enemies.iterator();
+		while(it.hasNext()) {
+			Sprite e = it.next();
+			e.drawHealthBar(shapeRenderer);
+		}
 	}
 
 	@Override

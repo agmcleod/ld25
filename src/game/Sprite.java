@@ -3,10 +3,12 @@ package game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.Array;
 
 public class Sprite {
@@ -21,11 +23,15 @@ public class Sprite {
 	private boolean animated;
 	protected float animationSpeed = 0.025f;
 	protected int movementSpeed;
+	protected int health = 10;
+	protected int maxHealth;
+	public boolean isColliding;
 	
 	public Sprite() {
 		animations = new Array<Animation>();
 		this.setAnimated(true);
 		frames = new Array<TextureRegion>();
+		this.maxHealth = this.health;
 	}
 	
 	public Sprite(int x, int y, int width, int height, Texture textureImage, boolean animated) {
@@ -42,6 +48,7 @@ public class Sprite {
 		else {
 			frames = new Array<TextureRegion>();
 		}
+		this.maxHealth = this.health;
 	}
 	
 	public void addAnimation(int[][] coords) {
@@ -57,8 +64,28 @@ public class Sprite {
 		this.frames.add(region);
 	}
 	
+	public String collisionRectangleString() {
+		Rectangle r = getCollisionRectangle();
+		return " x : " + r.x + " y: " + r.y + " width: " + r.width + " height: " + r.height; 
+	}
+	
+	public void drawHealthBar(ShapeRenderer renderer) {
+		renderer.begin(ShapeRenderer.ShapeType.FilledRectangle);
+		renderer.setColor(Color.BLACK);
+		renderer.filledRect(this.x, this.y - 13, this.width, 8);
+		renderer.end();
+		renderer.begin(ShapeRenderer.ShapeType.FilledRectangle);
+		renderer.setColor(Color.GREEN);
+		renderer.filledRect(this.x+1, this.y - 12, (int) ((this.width * ((float) this.health / (float) this.maxHealth)) - 2), 6);
+		renderer.end();
+	}
+	
 	public Rectangle getCollisionRectangle() {
 		return new Rectangle(this.x, this.y, this.width, this.height);
+	}
+	
+	public int getHealth() {
+		return health;
 	}
 
 	public int getHeight() {

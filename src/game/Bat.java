@@ -3,9 +3,11 @@ package game;
 import com.badlogic.gdx.graphics.Texture;
 
 public class Bat extends Sprite {
-	public Bat(int x, int y, int width, int height, Texture texture) {
-		super(x, y, width, height, texture, true);
+	public Bat(int x, int y, Texture texture) {
+		super(x, y, 32, 32, texture, true);
 		int[][] coords = new int[11][2];
+		this.health = 2;
+		this.maxHealth = 2;
 		coords[0][0] = 2;
 		coords[0][1] = 0;
 		coords[1][0] = 3;
