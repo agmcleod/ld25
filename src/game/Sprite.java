@@ -1,5 +1,7 @@
 package game;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -17,6 +19,8 @@ public class Sprite {
 	private Array<TextureRegion> frames;
 	private int focusedAnimation;
 	private boolean animated;
+	protected float animationSpeed = 0.025f;
+	protected int movementSpeed;
 	
 	public Sprite() {
 		animations = new Array<Animation>();
@@ -45,7 +49,7 @@ public class Sprite {
 		for(int i = 0; i < coords.length; i++) {
 			frames[i] = new TextureRegion(textureImage, coords[i][0] * 32, coords[i][1] * 32, 32, 32);
 		}
-		this.animations.add(new Animation(0.025f, frames));
+		this.animations.add(new Animation(this.animationSpeed, frames));
 	}
 	
 	public void addFrame(int x, int y, int width, int height) {
@@ -75,6 +79,49 @@ public class Sprite {
 
 	public int getY() {
 		return y;
+	}
+	
+	public boolean isOn(int x, int y) {
+		return (this.x == x && this.y == y);
+	}
+	
+	public void moveTo(int x, int y) {
+		if(!isOn((int) x, (int) y)) {
+			float angle = MathUtils.atan2(y - this.y, x - this.x);
+			angle = angle * (180/MathUtils.PI);
+			if(angle < 0)
+			{
+			    angle = 360 - (-angle);
+			}
+			
+			int velocityX = (int) (MathUtils.cos(angle * MathUtils.PI / 180) * this.movementSpeed * Gdx.graphics.getDeltaTime());
+			int velocityY = (int) (MathUtils.sin(angle * MathUtils.PI / 180) * this.movementSpeed * Gdx.graphics.getDeltaTime());
+			this.x += velocityX;
+			this.y += velocityY;
+			// check if sprite went past
+			
+			// if the previous x coordinate is less than the current one (meaning sprite is moving right)
+			// and the x passed the target, set it to the target
+			if(this.x - velocityX < this.x && this.x > x) {
+				this.x = x;
+			}
+			// otherwise if the previous coordinate is greater than, meaning it's moving left
+			// and the x passed the target, set it to the target
+			else if (this.x - velocityX > this.x && this.x < x) {
+				this.x = x;
+			}
+			
+			// if the previous y coordinate is less than the current one (sprite is moving up)
+			// and it passed the target, set it to the target
+			if(this.y - velocityY < this.y && this.y > y) {
+				this.y = y;
+			}
+			// otherwise if the previous y coordinate is greater than the current one (sprite moving down)
+			// and it passed the target, set it
+			if(this.y - velocityY > this.y && this.y < y) {
+				this.y = y;
+			}
+		}
 	}
 	
 	// call between a sprite batch begin & end

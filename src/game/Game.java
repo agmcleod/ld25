@@ -2,6 +2,7 @@ package game;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -9,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.math.Vector3;
 import java.util.Iterator;
@@ -24,17 +26,31 @@ public class Game implements ApplicationListener, InputProcessor {
 	private TextureRegion[] grassRegion;
 	private Sprite hero;
 	private float stateTime = 0f;
-	private Vector3 focusedVector;
+	// private Vector3 focusedVector;
 	private BitmapFont font;
-	private float mouseAngle;
+	private Array<Sprite> enemies;
+	private int focusedEnemy = 0;
+	private Vector2 targetPos;
+	private Music music;
 
 	@Override
 	public void create() {
 		camera = new OrthographicCamera();
 		camera.setToOrtho(false);
+		// get resources
 		grassImage = new Texture(Gdx.files.internal("assets/grass.jpeg"));
 		characterImage = new Texture(Gdx.files.internal("assets/characters.png"));
+		font = new BitmapFont(Gdx.files.internal("assets/font.fnt"), Gdx.files.internal("assets/font.png"), false);
+		music = Gdx.audio.newMusic(Gdx.files.internal("assets/My Song 2.mp3"));
+		// setup song to start playing
+		music.setLooping(true);
+		music.setVolume(0.4f);
+		music.play();
+		
+		// setup the sprite batch
 		batch = new SpriteBatch();
+		
+		// setup the grass tiles to render the background
 		grassTiles = new Array<Tile>();
 		grassRegion = new TextureRegion[4];
 		grassRegion[0] = new TextureRegion(grassImage, 0f, 0f, 0.5f, 0.5f);
@@ -43,9 +59,13 @@ public class Game implements ApplicationListener, InputProcessor {
 		grassRegion[3] = new TextureRegion(grassImage, 0.5f, 0.5f, 1f, 1f);
 		initGrass();
 		initHero();
-		focusedVector = new Vector3();
-		font = new BitmapFont(Gdx.files.internal("assets/font.fnt"), Gdx.files.internal("assets/font.png"), false);
+		// input processor setup
 		Gdx.input.setInputProcessor(this);
+		// setup the enemies
+		enemies = new Array<Sprite>();
+		Sprite enemy = new Bat(5 * 32, 5 * 32, 32, 32, characterImage);
+		enemies.add(enemy);
+		targetPos = new Vector2(enemy.getX(), enemy.getY());
 	}
 
 	@Override
@@ -53,6 +73,7 @@ public class Game implements ApplicationListener, InputProcessor {
 		grassImage.dispose();
 		characterImage.dispose();
 		font.dispose();
+		music.dispose();
 	}
 	
 	public void initGrass() {
@@ -98,19 +119,8 @@ public class Game implements ApplicationListener, InputProcessor {
 	
 	@Override
 	public boolean mouseMoved(int x, int y) {
-		camera.unproject(focusedVector.set(x, y, 0f));
-		float angle = MathUtils.atan2(focusedVector.y - hero.getY(), focusedVector.x - hero.getX());
-		angle = angle * (180/MathUtils.PI);
-		if(angle < 0)
-		{
-		    angle = 360 - (-angle);
-		}
-		this.mouseAngle = angle;
-		int idx = ((int) angle / 90); // - 1;
-		if(idx < 0) {
-			idx = 0;
-		}
-		hero.setFocusedAnimation(idx);
+		//camera.unproject(focusedVector.set(x, y, 0f));
+		//turnCharacterToFaceCoords((int) focusedVector.x, (int) focusedVector.y);
 		
 		return false;
 	}
@@ -125,12 +135,28 @@ public class Game implements ApplicationListener, InputProcessor {
 	public void render() {
 		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
 		camera.update();
+		
+		// change image for the hero depending on sprite position
+		Sprite enemy = enemies.get(focusedEnemy);
+		turnCharacterToFaceCoords(enemy.getX(), enemy.getY());
+		
+		// check if focused enemy needs to move
+		enemy.moveTo((int) targetPos.x, (int) targetPos.y);
+		
+		// drawing logic
 		batch.setProjectionMatrix(camera.combined);
 		batch.begin();
+		
 		tileBackground();
 		stateTime += Gdx.graphics.getDeltaTime();
 		hero.render(stateTime, batch);
-		font.draw(batch, String.valueOf(this.mouseAngle), 40, 40);
+		Iterator<Sprite> it = enemies.iterator();
+		while(it.hasNext()) {
+			Sprite e = it.next();
+			e.render(stateTime, batch);
+		}
+		// font.draw(batch, "x: " + targetPos.x + " y: " + targetPos.y, 10, 50);
+		
 		batch.end();
 	}
 
@@ -161,8 +187,11 @@ public class Game implements ApplicationListener, InputProcessor {
 	}
 
 	@Override
-	public boolean touchDown(int arg0, int arg1, int arg2, int arg3) {
-		// TODO Auto-generated method stub
+	public boolean touchDown(int x, int y, int pointer, int button) {
+		Vector3 position = new Vector3();
+		camera.unproject(position.set(x, y, 0f));
+		targetPos.x = position.x;
+		targetPos.y = position.y;
 		return false;
 	}
 
@@ -176,6 +205,20 @@ public class Game implements ApplicationListener, InputProcessor {
 	public boolean touchUp(int arg0, int arg1, int arg2, int arg3) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+	
+	public void turnCharacterToFaceCoords(int x, int y) {
+		float angle = MathUtils.atan2(y - hero.getY(), x - hero.getX());
+		angle = angle * (180/MathUtils.PI);
+		if(angle < 0)
+		{
+		    angle = 360 - (-angle);
+		}
+		int idx = ((int) angle / 90);
+		if(idx < 0) {
+			idx = 0;
+		}
+		hero.setFocusedAnimation(idx);
 	}
 
 }
