@@ -2,6 +2,7 @@ package game;
 import com.badlogic.gdx.math.Rectangle;
 
 public class Tile extends Rectangle {
+	private static final long serialVersionUID = 1L;
 	private int texture;
 	
 	public Tile() {

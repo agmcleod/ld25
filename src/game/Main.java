@@ -11,6 +11,6 @@ public class Main {
 		cfg.height = 768;
 		cfg.title = "Ludum Dare 25 - You are the villain - by agmcleod";
 		cfg.useGL20 = true;
-		new LwjglApplication(new Game(), cfg);
+		new LwjglApplication(new MyGame(), cfg);
 	}
 }

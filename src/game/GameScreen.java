@@ -1,7 +1,9 @@
 package game;
-import com.badlogic.gdx.ApplicationListener;
+
+import java.util.Iterator;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -9,16 +11,14 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Intersector;
-import java.util.Iterator;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 
-
-public class Game implements ApplicationListener, InputProcessor {
+public class GameScreen implements Screen, InputProcessor {
 	
 	private OrthographicCamera camera;
 	private Texture grassImage;
@@ -26,51 +26,45 @@ public class Game implements ApplicationListener, InputProcessor {
 	private SpriteBatch batch;
 	private Array<Tile> grassTiles;
 	private TextureRegion[] grassRegion;
-	private Sprite hero;
+	private Hero hero;
 	private float stateTime = 0f;
 	// private Vector3 focusedVector;
 	private BitmapFont font;
 	private Array<Sprite> enemies;
 	private int focusedEnemy = 0;
 	private Vector2 targetPos;
+	private Vector2 currentPos;
 	private Music music;
 	private ShapeRenderer shapeRenderer;
-
-	@Override
-	public void create() {
-		camera = new OrthographicCamera();
-		camera.setToOrtho(false);
-		// get resources
-		grassImage = new Texture(Gdx.files.internal("assets/grass.jpeg"));
-		characterImage = new Texture(Gdx.files.internal("assets/characters.png"));
-		font = new BitmapFont(Gdx.files.internal("assets/font.fnt"), Gdx.files.internal("assets/font.png"), false);
-		music = Gdx.audio.newMusic(Gdx.files.internal("assets/My Song 2.mp3"));
-		// setup song to start playing
-		music.setLooping(true);
-		music.setVolume(0.4f);
-		music.play();
+	
+	public GameScreen() {
 		
-		// setup the sprite batch
-		batch = new SpriteBatch();
-		// the shape renderer for health bars
-		shapeRenderer = new ShapeRenderer();
-		
-		// setup the grass tiles to render the background
-		grassTiles = new Array<Tile>();
-		grassRegion = new TextureRegion[4];
-		grassRegion[0] = new TextureRegion(grassImage, 0f, 0f, 0.5f, 0.5f);
-		grassRegion[1] = new TextureRegion(grassImage, 0.5f, 0f, 1f, 0.5f);
-		grassRegion[2] = new TextureRegion(grassImage, 0f, 0.5f, 0.5f, 1f);
-		grassRegion[3] = new TextureRegion(grassImage, 0.5f, 0.5f, 1f, 1f);
-		initGrass();
-		initHero();
-		// input processor setup
-		Gdx.input.setInputProcessor(this);
-		// setup the enemies
-		enemies = new Array<Sprite>();
-		Sprite enemy = new Bat(5 * 32, 5 * 32, characterImage);
-		enemies.add(enemy);
-		targetPos = new Vector2(enemy.getX(), enemy.getY());
+	}
+	
+	public void checkCollisions() {
+		// check if enemy collides with the hero
+		Sprite enemy = enemies.get(focusedEnemy);
+		if(Intersector.intersectRectangles(hero.getCollisionRectangle(), enemy.getCollisionRectangle())) {
+		  if(!enemy.isColliding && !hero.isColliding) {
+		    float angle = MathUtils.atan2(enemy.getY() - hero.getY(), enemy.getX() - hero.getX());
+		    angle = angle * (180/MathUtils.PI);
+		    if(angle < 0) {
+		        angle = 360 - (-angle);
+		    }
+		    if((int) angle / 90 == hero.getFacingDirection()) {
+		      enemy.health--;
+		    }
+		    else {
+		      hero.health--;
+		    }
+		  }
+		  enemy.isColliding = true;
+		  hero.isColliding = true;
+		}
+		else if(enemy.isColliding || hero.isColliding) {
+		  enemy.isColliding = false;
+		  hero.isColliding = false;
+		}
 	}
 
 	@Override
@@ -79,6 +73,12 @@ public class Game implements ApplicationListener, InputProcessor {
 		characterImage.dispose();
 		font.dispose();
 		music.dispose();
+	}
+	
+	@Override
+	public void hide() {
+		// TODO Auto-generated method stub
+
 	}
 	
 	public void initGrass() {
@@ -97,13 +97,13 @@ public class Game implements ApplicationListener, InputProcessor {
 	}
 	
 	public void initHero() {
-		hero = new game.Sprite(16 * 32, 12 * 32, 32, 32, characterImage, false);
+		hero = new game.Hero(16 * 32, 12 * 32, 32, 32, characterImage, false);
 		hero.addFrame(32, 0, 32, 32);
 		hero.addFrame(32, 32, 32, 32);
 		hero.addFrame(0, 32, 32, 32);
 		hero.addFrame(0, 0, 32, 32);
 	}
-	
+
 	@Override
 	public boolean keyDown(int arg0) {
 		// TODO Auto-generated method stub
@@ -115,13 +115,13 @@ public class Game implements ApplicationListener, InputProcessor {
 		// TODO Auto-generated method stub
 		return false;
 	}
-
+	
 	@Override
 	public boolean keyUp(int arg0) {
 		// TODO Auto-generated method stub
 		return false;
 	}
-	
+
 	@Override
 	public boolean mouseMoved(int x, int y) {
 		//camera.unproject(focusedVector.set(x, y, 0f));
@@ -133,34 +133,26 @@ public class Game implements ApplicationListener, InputProcessor {
 	@Override
 	public void pause() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
-	public void render() {
+	public void render(float arg0) {
 		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
 		camera.update();
 		
 		// change image for the hero depending on sprite position
 		Sprite enemy = enemies.get(focusedEnemy);
-		turnCharacterToFaceCoords(enemy.getX(), enemy.getY());
+		turnCharacterToFaceCoords((int) currentPos.x, (int) currentPos.y);
 		
 		// check if focused enemy needs to move
-		enemy.moveTo((int) targetPos.x, (int) targetPos.y);
+		if(enemy.moveTo((int) targetPos.x, (int) targetPos.y)) {
+			currentPos.x = enemy.getX();
+			currentPos.y = enemy.getY();
+		}
 		hero.drawHealthBar(shapeRenderer);
-		// check if enemy collides with the hero
-		if(Intersector.intersectRectangles(hero.getCollisionRectangle(), enemy.getCollisionRectangle())) {
-			if(!enemy.isColliding && !hero.isColliding) {
-				enemy.health--;
-				hero.health--;
-			}
-			enemy.isColliding = true;
-			hero.isColliding = true;
-		}
-		else if(enemy.isColliding || hero.isColliding) {
-			enemy.isColliding = false;
-			hero.isColliding = false;
-		}
+		
+		checkCollisions();
 		
 		// drawing logic
 		batch.setProjectionMatrix(camera.combined);
@@ -206,26 +198,65 @@ public class Game implements ApplicationListener, InputProcessor {
 			Sprite e = it.next();
 			e.drawHealthBar(shapeRenderer);
 		}
+
 	}
 
 	@Override
 	public void resize(int arg0, int arg1) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void resume() {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
+
 	@Override
 	public boolean scrolled(int arg0) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 	
+	@Override
+	public void show() {
+		camera = new OrthographicCamera();
+		camera.setToOrtho(false);
+		// get resources
+		grassImage = new Texture(Gdx.files.internal("assets/grass.jpeg"));
+		characterImage = new Texture(Gdx.files.internal("assets/characters.png"));
+		font = new BitmapFont(Gdx.files.internal("assets/font.fnt"), Gdx.files.internal("assets/font.png"), false);
+		music = Gdx.audio.newMusic(Gdx.files.internal("assets/My Song 2.mp3"));
+		// setup song to start playing
+		music.setLooping(true);
+		music.setVolume(0.4f);
+		music.play();
+		
+		// setup the sprite batch
+		batch = new SpriteBatch();
+		// the shape renderer for health bars
+		shapeRenderer = new ShapeRenderer();
+		
+		// setup the grass tiles to render the background
+		grassTiles = new Array<Tile>();
+		grassRegion = new TextureRegion[4];
+		grassRegion[0] = new TextureRegion(grassImage, 0f, 0f, 0.5f, 0.5f);
+		grassRegion[1] = new TextureRegion(grassImage, 0.5f, 0f, 1f, 0.5f);
+		grassRegion[2] = new TextureRegion(grassImage, 0f, 0.5f, 0.5f, 1f);
+		grassRegion[3] = new TextureRegion(grassImage, 0.5f, 0.5f, 1f, 1f);
+		initGrass();
+		initHero();
+		// input processor setup
+		Gdx.input.setInputProcessor(this);
+		// setup the enemies
+		enemies = new Array<Sprite>();
+		Sprite enemy = new Bat(5 * 32, 5 * 32, characterImage);
+		enemies.add(enemy);
+		targetPos = new Vector2(enemy.getX(), enemy.getY());
+		currentPos = new Vector2(enemy.getX(), enemy.getY());
+	}
+
 	public void tileBackground() {
 		Iterator<Tile> it = this.grassTiles.iterator();
 		while(it.hasNext()) {
@@ -242,13 +273,13 @@ public class Game implements ApplicationListener, InputProcessor {
 		targetPos.y = position.y;
 		return false;
 	}
-
+	
 	@Override
 	public boolean touchDragged(int arg0, int arg1, int arg2) {
 		// TODO Auto-generated method stub
 		return false;
 	}
-
+	
 	@Override
 	public boolean touchUp(int arg0, int arg1, int arg2, int arg3) {
 		// TODO Auto-generated method stub
@@ -258,8 +289,7 @@ public class Game implements ApplicationListener, InputProcessor {
 	public void turnCharacterToFaceCoords(int x, int y) {
 		float angle = MathUtils.atan2(y - hero.getY(), x - hero.getX());
 		angle = angle * (180/MathUtils.PI);
-		if(angle < 0)
-		{
+		if(angle < 0) {
 		    angle = 360 - (-angle);
 		}
 		int idx = ((int) angle / 90);
@@ -267,6 +297,8 @@ public class Game implements ApplicationListener, InputProcessor {
 			idx = 0;
 		}
 		hero.setFocusedAnimation(idx);
+		// divide and multiple by 90 to get to specific degree values
+		hero.setFacingDirection((int) angle / 90);
 	}
 
 }

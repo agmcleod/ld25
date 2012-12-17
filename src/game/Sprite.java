@@ -23,7 +23,7 @@ public class Sprite {
 	private boolean animated;
 	protected float animationSpeed = 0.025f;
 	protected int movementSpeed;
-	protected int health = 10;
+	protected int health = 3;
 	protected int maxHealth;
 	public boolean isColliding;
 	
@@ -112,7 +112,7 @@ public class Sprite {
 		return (this.x == x && this.y == y);
 	}
 	
-	public void moveTo(int x, int y) {
+	public boolean moveTo(int x, int y) {
 		if(!isOn((int) x, (int) y)) {
 			float angle = MathUtils.atan2(y - this.y, x - this.x);
 			angle = angle * (180/MathUtils.PI);
@@ -148,6 +148,10 @@ public class Sprite {
 			if(this.y - velocityY > this.y && this.y < y) {
 				this.y = y;
 			}
+			return false;
+		}
+		else {
+			return true;
 		}
 	}
 	
