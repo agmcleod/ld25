@@ -2,6 +2,7 @@ package game;
 
 import java.util.Iterator;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Music;
@@ -14,6 +15,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
@@ -32,7 +34,6 @@ public class GameScreen implements Screen, InputProcessor {
 	private BitmapFont font;
 	private Array<Sprite> enemies;
 	private int focusedEnemy = 0;
-	private Vector2 targetPos;
 	private Vector2 currentPos;
 	private Music music;
 	private ShapeRenderer shapeRenderer;
@@ -75,6 +76,23 @@ public class GameScreen implements Screen, InputProcessor {
 		music.dispose();
 	}
 	
+	public Sprite getEnemyAtCoords(int x, int y) {
+		return this.enemies.get(getEnemyIndexAtCoords(x, y));
+	}
+	
+	public int getEnemyIndexAtCoords(int x, int y) {
+		int idx = -1;
+		for(int i = 0; i < this.enemies.size; i++) {
+			Sprite e = this.enemies.get(i);
+			Rectangle r = new Rectangle(e.getX(), e.getY(), e.getWidth(), e.getHeight());
+			if(r.contains(x, y)) {
+				idx = i;
+				break;
+			}
+		}
+		return idx;
+	}
+	
 	@Override
 	public void hide() {
 		// TODO Auto-generated method stub
@@ -105,8 +123,11 @@ public class GameScreen implements Screen, InputProcessor {
 	}
 
 	@Override
-	public boolean keyDown(int arg0) {
-		// TODO Auto-generated method stub
+	public boolean keyDown(int key) {
+		// if user presses space, spawn a bat
+		if(key == Input.Keys.SPACE && this.enemies.size < 5) {
+			enemies.add(spawnEnemy());
+		}
 		return false;
 	}
 
@@ -143,13 +164,17 @@ public class GameScreen implements Screen, InputProcessor {
 		
 		// change image for the hero depending on sprite position
 		Sprite enemy = enemies.get(focusedEnemy);
-		turnCharacterToFaceCoords((int) currentPos.x, (int) currentPos.y);
 		
-		// check if focused enemy needs to move
-		if(enemy.moveTo((int) targetPos.x, (int) targetPos.y)) {
-			currentPos.x = enemy.getX();
-			currentPos.y = enemy.getY();
+		// check if enemy needs to move
+		Iterator<Sprite> it = enemies.iterator();
+		while(it.hasNext()) {
+			Sprite e = it.next();
+			if(e.moveTo((int) e.getTargetPos().x, (int) e.getTargetPos().y)) {
+				currentPos.x = e.getX();
+				currentPos.y = e.getY();
+			}
 		}
+		
 		hero.drawHealthBar(shapeRenderer);
 		
 		checkCollisions();
@@ -161,7 +186,7 @@ public class GameScreen implements Screen, InputProcessor {
 		tileBackground();
 		stateTime += Gdx.graphics.getDeltaTime();
 		hero.render(stateTime, batch);
-		Iterator<Sprite> it = enemies.iterator();
+		it = enemies.iterator();
 		int removed = 0;
 		// go through the spawned enemies, and check if a dead one needs to be removed
 		while(it.hasNext()) {
@@ -174,14 +199,12 @@ public class GameScreen implements Screen, InputProcessor {
 				e.render(stateTime, batch);
 			}
 		}
-		// add a new enemy to replace the lost ones
-		for(int i = 0; i < removed; i++) {
-			enemies.add(new Bat(MathUtils.random(1, 20) * 32, MathUtils.random(1, 20) * 32, characterImage));
-		}
-		// reset the target position
+		// reset the target
 		if(removed > 0) {
 			focusedEnemy = 0;
-			this.targetPos = new Vector2(enemies.get(0).getX(), enemies.get(0).getY());
+			if(this.enemies.size == 0) {
+				this.enemies.add(spawnEnemy());
+			}
 		}
 		
 		// end game if hero dies
@@ -253,8 +276,11 @@ public class GameScreen implements Screen, InputProcessor {
 		enemies = new Array<Sprite>();
 		Sprite enemy = new Bat(5 * 32, 5 * 32, characterImage);
 		enemies.add(enemy);
-		targetPos = new Vector2(enemy.getX(), enemy.getY());
 		currentPos = new Vector2(enemy.getX(), enemy.getY());
+	}
+	
+	public Sprite spawnEnemy() {
+		return new Bat(MathUtils.random(1, 20) * 32, MathUtils.random(1, 20) * 32, characterImage);
 	}
 
 	public void tileBackground() {
@@ -269,8 +295,14 @@ public class GameScreen implements Screen, InputProcessor {
 	public boolean touchDown(int x, int y, int pointer, int button) {
 		Vector3 position = new Vector3();
 		camera.unproject(position.set(x, y, 0f));
-		targetPos.x = position.x;
-		targetPos.y = position.y;
+		int enemyIndex = getEnemyIndexAtCoords((int) position.x, (int) position.y);
+		if(enemyIndex > -1) {
+			focusedEnemy = enemyIndex;
+		}
+		Sprite enemy = this.enemies.get(focusedEnemy);
+		turnCharacterToFaceCoords((int) enemy.getTargetPos().x, (int) enemy.getTargetPos().y);
+		enemy.setTargetPos(new Vector2(position.x, position.y));
+		
 		return false;
 	}
 	

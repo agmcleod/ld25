@@ -3,6 +3,7 @@ package game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -26,12 +27,14 @@ public class Sprite {
 	protected int health = 3;
 	protected int maxHealth;
 	public boolean isColliding;
+	private Vector2 targetPos;
 	
 	public Sprite() {
 		animations = new Array<Animation>();
 		this.setAnimated(true);
 		frames = new Array<TextureRegion>();
 		this.maxHealth = this.health;
+		targetPos = new Vector2(this.x, this.y);
 	}
 	
 	public Sprite(int x, int y, int width, int height, Texture textureImage, boolean animated) {
@@ -49,6 +52,7 @@ public class Sprite {
 			frames = new Array<TextureRegion>();
 		}
 		this.maxHealth = this.health;
+		targetPos = new Vector2(this.x, this.y);
 	}
 	
 	public void addAnimation(int[][] coords) {
@@ -198,5 +202,13 @@ public class Sprite {
 
 	public void setAnimated(boolean animated) {
 		this.animated = animated;
+	}
+
+	public Vector2 getTargetPos() {
+		return targetPos;
+	}
+
+	public void setTargetPos(Vector2 targetPos) {
+		this.targetPos = targetPos;
 	}
 }
