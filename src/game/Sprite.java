@@ -28,6 +28,7 @@ public class Sprite {
 	protected int maxHealth;
 	public boolean isColliding;
 	private Vector2 targetPos;
+	private boolean focused = false;
 	
 	public Sprite() {
 		animations = new Array<Animation>();
@@ -82,6 +83,15 @@ public class Sprite {
 		renderer.setColor(Color.GREEN);
 		renderer.filledRect(this.x+1, this.y - 12, (int) ((this.width * ((float) this.health / (float) this.maxHealth)) - 2), 6);
 		renderer.end();
+	}
+	
+	public void drawBox(ShapeRenderer renderer) {
+		if(focused) {
+			renderer.begin(ShapeRenderer.ShapeType.Rectangle);
+			renderer.setColor(Color.RED);
+			renderer.rect(x, y, width, height);
+			renderer.end();
+		}
 	}
 	
 	public Rectangle getCollisionRectangle() {
@@ -210,5 +220,13 @@ public class Sprite {
 
 	public void setTargetPos(Vector2 targetPos) {
 		this.targetPos = targetPos;
+	}
+
+	public boolean isFocused() {
+		return focused;
+	}
+
+	public void setFocused(boolean focused) {
+		this.focused = focused;
 	}
 }

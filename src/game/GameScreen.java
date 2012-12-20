@@ -44,27 +44,30 @@ public class GameScreen implements Screen, InputProcessor {
 	
 	public void checkCollisions() {
 		// check if enemy collides with the hero
-		Sprite enemy = enemies.get(focusedEnemy);
-		if(Intersector.intersectRectangles(hero.getCollisionRectangle(), enemy.getCollisionRectangle())) {
-		  if(!enemy.isColliding && !hero.isColliding) {
-		    float angle = MathUtils.atan2(enemy.getY() - hero.getY(), enemy.getX() - hero.getX());
-		    angle = angle * (180/MathUtils.PI);
-		    if(angle < 0) {
-		        angle = 360 - (-angle);
-		    }
-		    if((int) angle / 90 == hero.getFacingDirection()) {
-		      enemy.health--;
-		    }
-		    else {
-		      hero.health--;
-		    }
-		  }
-		  enemy.isColliding = true;
-		  hero.isColliding = true;
-		}
-		else if(enemy.isColliding || hero.isColliding) {
-		  enemy.isColliding = false;
-		  hero.isColliding = false;
+		Iterator<Sprite> it = enemies.iterator();
+		while(it.hasNext()) {
+			Sprite enemy = it.next();
+			if(Intersector.intersectRectangles(hero.getCollisionRectangle(), enemy.getCollisionRectangle())) {
+			  if(!enemy.isColliding && !hero.isColliding) {
+			    float angle = MathUtils.atan2(enemy.getY() - hero.getY(), enemy.getX() - hero.getX());
+			    angle = angle * (180/MathUtils.PI);
+			    if(angle < 0) {
+			        angle = 360 - (-angle);
+			    }
+			    if((int) angle / 90 == hero.getFacingDirection()) {
+			      enemy.health--;
+			    }
+			    else {
+			      hero.health--;
+			    }
+			  }
+			  enemy.isColliding = true;
+			  hero.isColliding = true;
+			}
+			else if(enemy.isColliding || hero.isColliding) {
+			  enemy.isColliding = false;
+			  hero.isColliding = false;
+			}
 		}
 	}
 
@@ -145,8 +148,6 @@ public class GameScreen implements Screen, InputProcessor {
 
 	@Override
 	public boolean mouseMoved(int x, int y) {
-		//camera.unproject(focusedVector.set(x, y, 0f));
-		//turnCharacterToFaceCoords((int) focusedVector.x, (int) focusedVector.y);
 		
 		return false;
 	}
@@ -219,6 +220,7 @@ public class GameScreen implements Screen, InputProcessor {
 		it = enemies.iterator();
 		while(it.hasNext()) {
 			Sprite e = it.next();
+			e.drawBox(shapeRenderer);
 			e.drawHealthBar(shapeRenderer);
 		}
 
@@ -275,6 +277,7 @@ public class GameScreen implements Screen, InputProcessor {
 		// setup the enemies
 		enemies = new Array<Sprite>();
 		Sprite enemy = new Bat(5 * 32, 5 * 32, characterImage);
+		enemy.setFocused(true);
 		enemies.add(enemy);
 		currentPos = new Vector2(enemy.getX(), enemy.getY());
 	}
@@ -296,12 +299,20 @@ public class GameScreen implements Screen, InputProcessor {
 		Vector3 position = new Vector3();
 		camera.unproject(position.set(x, y, 0f));
 		int enemyIndex = getEnemyIndexAtCoords((int) position.x, (int) position.y);
+		
 		if(enemyIndex > -1) {
+			this.enemies.get(focusedEnemy).setFocused(false);
 			focusedEnemy = enemyIndex;
+			Sprite enemy = this.enemies.get(focusedEnemy);
+			enemy.setFocused(true);
+			turnCharacterToFaceCoords((int) enemy.getTargetPos().x, (int) enemy.getTargetPos().y);
 		}
-		Sprite enemy = this.enemies.get(focusedEnemy);
-		turnCharacterToFaceCoords((int) enemy.getTargetPos().x, (int) enemy.getTargetPos().y);
-		enemy.setTargetPos(new Vector2(position.x, position.y));
+		else {
+			Sprite enemy = this.enemies.get(focusedEnemy);
+			enemy.setTargetPos(new Vector2(position.x, position.y));
+			enemy.setFocused(true);
+			turnCharacterToFaceCoords((int) enemy.getTargetPos().x, (int) enemy.getTargetPos().y);
+		}
 		
 		return false;
 	}
