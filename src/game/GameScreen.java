@@ -37,9 +37,10 @@ public class GameScreen implements Screen, InputProcessor {
 	private Vector2 currentPos;
 	private Music music;
 	private ShapeRenderer shapeRenderer;
+	private MyGame game;
 	
-	public GameScreen() {
-		
+	public GameScreen(MyGame game) {
+		this.game = game;
 	}
 	
 	public void checkCollisions() {
@@ -210,7 +211,7 @@ public class GameScreen implements Screen, InputProcessor {
 		
 		// end game if hero dies
 		if(hero.health <= 0) {
-			Gdx.app.exit();
+			game.setScreen(game.endGameScreen);
 		}
 		
 		// font.draw(batch, "x: " + targetPos.x + " y: " + targetPos.y, 10, 50);
