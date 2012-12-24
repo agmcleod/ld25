@@ -118,8 +118,10 @@ public class MainMenuScreen implements Screen, InputProcessor {
 	public void show() {
 		font = new BitmapFont(Gdx.files.internal("assets/font.fnt"), Gdx.files.internal("assets/font.png"), false);
 		batch = new SpriteBatch();
-		startButton = new Rectangle(300.0f, 650.0f, 100.0f, 32.0f);
-		optionsButton = new Rectangle(300.0f, 600.0f, 120.0f, 32.0f);
+		BitmapFont.TextBounds startBounds = font.getBounds("Start");
+		BitmapFont.TextBounds optionBounds = font.getBounds("Options");
+		startButton = new Rectangle(300.0f, 650.0f, startBounds.width, startBounds.height);
+		optionsButton = new Rectangle(300.0f, 600.0f, optionBounds.width, optionBounds.height);
 		Gdx.input.setInputProcessor(this);
 		shapeRenderer = new ShapeRenderer();
 		mousePos = new Vector3();

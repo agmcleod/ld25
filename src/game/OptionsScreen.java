@@ -23,9 +23,10 @@ public class OptionsScreen implements Screen, InputProcessor {
 	private SpriteBatch batch;
 	private Rectangle backButton;
 	private ObjectMap<String, Binding> optionButtons;
-	private boolean debugging = true;
 	private Vector3 mousePos;
 	private OrthographicCamera camera;
+	private boolean focused = false;
+	private Rectangle focusedBox;
 	
 	public OptionsScreen(MyGame game) {
 		this.game = game;
@@ -83,8 +84,21 @@ public class OptionsScreen implements Screen, InputProcessor {
 		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
 		camera.update();
 		if(Gdx.input.isKeyPressed(Input.Keys.ESCAPE)) {
-			goBack();
+			if(focused) {
+				focused = false;
+			}
+			else {
+				goBack();
+			}
 		}
+		
+		if(focused) {
+			shapeRenderer.begin(ShapeType.FilledRectangle);
+			shapeRenderer.setColor(Color.BLUE);
+			shapeRenderer.filledRect(focusedBox.x, focusedBox.y, focusedBox.width, focusedBox.height);
+			shapeRenderer.end();
+		}
+		
 		batch.begin();
 		ObjectMap.Entries<String, Binding> it = optionButtons.entries();
 		font.draw(batch, "Back", backButton.x, backButton.y+backButton.height);
@@ -94,18 +108,6 @@ public class OptionsScreen implements Screen, InputProcessor {
 			font.draw(batch, entry.key, bounds.x, bounds.y+bounds.height);
 		}
 		batch.end();
-		
-		if(debugging) {
-			shapeRenderer.begin(ShapeType.Rectangle);
-			shapeRenderer.setColor(Color.RED);
-			it = optionButtons.entries();
-			shapeRenderer.rect(backButton.x, backButton.y, backButton.width, backButton.height);
-			while(it.hasNext()) {
-				ObjectMap.Entry<String, Binding> entry = it.next();
-				entry.value.drawBounds(shapeRenderer);
-			}
-			shapeRenderer.end();
-		}
 	}
 
 	@Override
@@ -149,13 +151,33 @@ public class OptionsScreen implements Screen, InputProcessor {
 		camera = new OrthographicCamera();
 		camera.setToOrtho(false);
 		Gdx.input.setInputProcessor(this);
+		focusedBox = new Rectangle();
 	}
 
 	@Override
 	public boolean touchDown(int x, int y, int arg2, int arg3) {
 		camera.unproject(mousePos.set(x, y, 0));
 		if(backButton.contains(mousePos.x, mousePos.y)) {
-			game.setScreen(game.mainMenuScreen);
+			goBack();
+		}
+		ObjectMap.Entries<String, Binding> entries = optionButtons.entries();
+		boolean focusedAnOption = false;
+		while(entries.hasNext()) {
+			ObjectMap.Entry<String, Binding> entry = entries.next();
+			Rectangle bounds = entry.value.getBounds();
+			camera.unproject(mousePos.set(x, y, 0));
+			if(bounds.contains(mousePos.x, mousePos.y)) {
+				this.focused = true;
+				focusedAnOption = true;
+				this.focusedBox.setY(bounds.y);
+				this.focusedBox.setX(bounds.x);
+				BitmapFont.TextBounds b = font.getBounds(entry.key);
+				this.focusedBox.setHeight(b.height);
+				this.focusedBox.setWidth(b.width);
+			}
+		}
+		if(!focusedAnOption) {
+			this.focused = false;
 		}
 		return false;
 	}
