@@ -19,6 +19,7 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.ObjectMap;
 
 public class GameScreen implements Screen, InputProcessor {
 	
@@ -129,8 +130,20 @@ public class GameScreen implements Screen, InputProcessor {
 	@Override
 	public boolean keyDown(int key) {
 		// if user presses space, spawn a bat
-		if(key == Input.Keys.SPACE && this.enemies.size < 5) {
+		ObjectMap<String, Integer> bindings = game.getBindings();
+		int spawnKey = bindings.get("spawn");
+		int changeKey = bindings.get("change enemy");
+		if(key == spawnKey && this.enemies.size < 5) {
 			enemies.add(spawnEnemy());
+		}
+		else if (key == changeKey && enemies.size > 1) {
+			this.enemies.get(focusedEnemy).setFocused(false);
+			focusedEnemy++;
+			if(focusedEnemy >= enemies.size) {
+				focusedEnemy = 0;
+			}
+			Sprite enemy = this.enemies.get(focusedEnemy);
+			enemy.setFocused(true);
 		}
 		return false;
 	}

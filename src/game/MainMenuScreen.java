@@ -1,5 +1,7 @@
 package game;
 
+import java.awt.event.KeyEvent;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
@@ -25,7 +27,7 @@ public class MainMenuScreen implements Screen, InputProcessor {
 	private ShapeRenderer shapeRenderer;
 	private Vector3 mousePos;
 	private OrthographicCamera camera;
-	private boolean debugging = true;
+	private boolean debugging = false;
 	
 	public MainMenuScreen(MyGame game) {
 		this.game = game;
@@ -46,14 +48,13 @@ public class MainMenuScreen implements Screen, InputProcessor {
 	}
 
 	@Override
-	public boolean keyDown(int arg0) {
-		// TODO Auto-generated method stub
+	public boolean keyDown(int keyCode) {
+		System.out.println(KeyEvent.getKeyText(keyCode));
 		return false;
 	}
 
 	@Override
 	public boolean keyTyped(char arg0) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 

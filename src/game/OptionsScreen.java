@@ -22,11 +22,13 @@ public class OptionsScreen implements Screen, InputProcessor {
 	private BitmapFont font;
 	private SpriteBatch batch;
 	private Rectangle backButton;
+	// action name with a binding, which stores the location of the binding on the interface, so it can be clicked
 	private ObjectMap<String, Binding> optionButtons;
 	private Vector3 mousePos;
 	private OrthographicCamera camera;
 	private boolean focused = false;
 	private Rectangle focusedBox;
+	private String focusedAction = "";
 	
 	public OptionsScreen(MyGame game) {
 		this.game = game;
@@ -50,8 +52,8 @@ public class OptionsScreen implements Screen, InputProcessor {
 	}
 
 	@Override
-	public boolean keyDown(int arg0) {
-		// TODO Auto-generated method stub
+	public boolean keyDown(int keyCode) {
+		updateBinding(keyCode);
 		return false;
 	}
 
@@ -94,7 +96,8 @@ public class OptionsScreen implements Screen, InputProcessor {
 		
 		if(focused) {
 			shapeRenderer.begin(ShapeType.FilledRectangle);
-			shapeRenderer.setColor(Color.BLUE);
+			Color c = new Color(0.15f, 0.4f, 0.15f, 1f);
+			shapeRenderer.setColor(c);
 			shapeRenderer.filledRect(focusedBox.x, focusedBox.y, focusedBox.width, focusedBox.height);
 			shapeRenderer.end();
 		}
@@ -174,6 +177,7 @@ public class OptionsScreen implements Screen, InputProcessor {
 				BitmapFont.TextBounds b = font.getBounds(entry.key);
 				this.focusedBox.setHeight(b.height);
 				this.focusedBox.setWidth(b.width);
+				this.focusedAction = entry.key;
 			}
 		}
 		if(!focusedAnOption) {
@@ -192,6 +196,15 @@ public class OptionsScreen implements Screen, InputProcessor {
 	public boolean touchUp(int arg0, int arg1, int arg2, int arg3) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+	
+	public void updateBinding(int keycode) {
+		ObjectMap<String, Integer> bindings = game.getBindings();
+		bindings.put(this.focusedAction, keycode);
+		System.out.println("Updating action: " + this.focusedAction + " to " + keycode);
+		Binding bind = optionButtons.get(this.focusedAction);
+		bind.keyCode = keycode;
+		optionButtons.put(this.focusedAction, bind);
 	}
 
 }

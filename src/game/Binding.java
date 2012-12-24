@@ -8,6 +8,7 @@ import com.badlogic.gdx.math.Rectangle;
 
 public class Binding {
 	private Rectangle bounds;
+	// store the action key, as well as the keycode
 	String key;
 	int keyCode;
 	
