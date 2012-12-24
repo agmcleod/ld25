@@ -7,42 +7,45 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.ObjectMap;
+import com.badlogic.gdx.utils.ObjectMap.Entries;
 
-public class MainMenuScreen implements Screen, InputProcessor {
-	
+public class OptionsScreen implements Screen, InputProcessor {
 	private MyGame game;
+	private ShapeRenderer shapeRenderer;
 	private BitmapFont font;
 	private SpriteBatch batch;
-	private Rectangle startButton;
-	private Rectangle optionsButton;
-	private ShapeRenderer shapeRenderer;
+	private Rectangle backButton;
+	private ObjectMap<String, Binding> optionButtons;
+	private boolean debugging = true;
 	private Vector3 mousePos;
 	private OrthographicCamera camera;
-	private boolean debugging = true;
 	
-	public MainMenuScreen(MyGame game) {
+	public OptionsScreen(MyGame game) {
 		this.game = game;
 	}
 
 	@Override
 	public void dispose() {
 		// TODO Auto-generated method stub
-		batch.dispose();
-		shapeRenderer.dispose();
 		font.dispose();
+		shapeRenderer.dispose();
+		batch.dispose();
 	}
 
 	@Override
 	public void hide() {
 		// TODO Auto-generated method stub
-
+	}
+	
+	public void goBack() {
+		game.setScreen(game.mainMenuScreen);
 	}
 
 	@Override
@@ -76,22 +79,31 @@ public class MainMenuScreen implements Screen, InputProcessor {
 	}
 
 	@Override
-	public void render(float delta) {
+	public void render(float arg0) {
 		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
-		
 		camera.update();
-		
+		if(Gdx.input.isKeyPressed(Input.Keys.ESCAPE)) {
+			goBack();
+		}
 		batch.begin();
-		font.draw(batch, "Start", startButton.x, startButton.y + startButton.height);
-		font.draw(batch, "Options", optionsButton.x, optionsButton.y + optionsButton.height);
+		ObjectMap.Entries<String, Binding> it = optionButtons.entries();
+		font.draw(batch, "Back", backButton.x, backButton.y+backButton.height);
+		while(it.hasNext()) {
+			ObjectMap.Entry<String, Binding> entry = it.next();
+			Rectangle bounds = entry.value.getBounds();
+			font.draw(batch, entry.key, bounds.x, bounds.y+bounds.height);
+		}
 		batch.end();
 		
 		if(debugging) {
 			shapeRenderer.begin(ShapeType.Rectangle);
 			shapeRenderer.setColor(Color.RED);
-			shapeRenderer.rect(startButton.x, startButton.y, startButton.width, startButton.height);
-			
-			shapeRenderer.rect(optionsButton.x, optionsButton.y, optionsButton.width, optionsButton.height);
+			it = optionButtons.entries();
+			shapeRenderer.rect(backButton.x, backButton.y, backButton.width, backButton.height);
+			while(it.hasNext()) {
+				ObjectMap.Entry<String, Binding> entry = it.next();
+				entry.value.drawBounds(shapeRenderer);
+			}
 			shapeRenderer.end();
 		}
 	}
@@ -118,23 +130,32 @@ public class MainMenuScreen implements Screen, InputProcessor {
 	public void show() {
 		font = new BitmapFont(Gdx.files.internal("assets/font.fnt"), Gdx.files.internal("assets/font.png"), false);
 		batch = new SpriteBatch();
-		startButton = new Rectangle(300.0f, 650.0f, 100.0f, 32.0f);
-		optionsButton = new Rectangle(300.0f, 600.0f, 120.0f, 32.0f);
-		Gdx.input.setInputProcessor(this);
 		shapeRenderer = new ShapeRenderer();
+		optionButtons = new ObjectMap<String, Binding>();
+		backButton = new Rectangle(40.0f, 730.0f, 100.0f, 32.0f);
+		
+		// setup interface
+		ObjectMap.Entries<String, Integer> it = game.getBindings().entries();
+		float y = 700.0f;
+		while(it.hasNext()) {
+			ObjectMap.Entry<String, Integer> entry = it.next();
+			Rectangle button = new Rectangle(300.0f, y, 150.0f, 32);
+			y -= 40;
+			Binding b = new Binding(entry.key, entry.value);
+			b.setBounds(button);
+			optionButtons.put(entry.key, b);
+		}
 		mousePos = new Vector3();
 		camera = new OrthographicCamera();
 		camera.setToOrtho(false);
+		Gdx.input.setInputProcessor(this);
 	}
 
 	@Override
-	public boolean touchDown(int x, int y, int pointer, int button) {
+	public boolean touchDown(int x, int y, int arg2, int arg3) {
 		camera.unproject(mousePos.set(x, y, 0));
-		if(startButton.contains(mousePos.x, mousePos.y)) {
-			game.setScreen(game.gameScreen);
-		}
-		else if(optionsButton.contains(mousePos.x, mousePos.y)) {
-			game.setScreen(game.optionsScreen);
+		if(backButton.contains(mousePos.x, mousePos.y)) {
+			game.setScreen(game.mainMenuScreen);
 		}
 		return false;
 	}
