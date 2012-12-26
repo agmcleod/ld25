@@ -202,14 +202,14 @@ public class OptionsScreen implements Screen, InputProcessor {
 	public void updateBinding(int keycode) {
 		ObjectMap<String, Binding> bindings = game.getBindings();
 		Binding binding = bindings.get(this.focusedAction);
-		try {
-			binding.character = game.map.get(keycode);
+		String character = game.map.get(keycode);
+		if(character != null) {
+			binding.character = character; 
 			binding.keyCode = keycode;
 			System.out.println("Updating action: " + this.focusedAction + " to " + keycode + " " + binding.character);
 			bindings.put(focusedAction, binding);
-		}
-		catch(java.lang.NullPointerException e) {
-			System.out.println("Couldnt find mapping for: " + keycode);
+		} else {
+			System.out.println("Couldnt map character: " + keycode);
 		}
 	}
 

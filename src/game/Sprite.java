@@ -130,8 +130,7 @@ public class Sprite {
 		if(!isOn((int) x, (int) y)) {
 			float angle = MathUtils.atan2(y - this.y, x - this.x);
 			angle = angle * (180/MathUtils.PI);
-			if(angle < 0)
-			{
+			if(angle < 0) {
 			    angle = 360 - (-angle);
 			}
 			
