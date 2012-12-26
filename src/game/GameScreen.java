@@ -130,9 +130,9 @@ public class GameScreen implements Screen, InputProcessor {
 	@Override
 	public boolean keyDown(int key) {
 		// if user presses space, spawn a bat
-		ObjectMap<String, Integer> bindings = game.getBindings();
-		int spawnKey = bindings.get("spawn");
-		int changeKey = bindings.get("change enemy");
+		ObjectMap<String, Binding> bindings = game.getBindings();
+		int spawnKey = bindings.get("spawn").keyCode;
+		int changeKey = bindings.get("change enemy").keyCode;
 		if(key == spawnKey && this.enemies.size < 5) {
 			enemies.add(spawnEnemy());
 		}

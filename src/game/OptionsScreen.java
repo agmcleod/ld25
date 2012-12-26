@@ -23,7 +23,7 @@ public class OptionsScreen implements Screen, InputProcessor {
 	private SpriteBatch batch;
 	private Rectangle backButton;
 	// action name with a binding, which stores the location of the binding on the interface, so it can be clicked
-	private ObjectMap<String, Binding> optionButtons;
+	private ObjectMap<String, Rectangle> bindingButtons;
 	private Vector3 mousePos;
 	private OrthographicCamera camera;
 	private boolean focused = false;
@@ -58,8 +58,7 @@ public class OptionsScreen implements Screen, InputProcessor {
 	}
 
 	@Override
-	public boolean keyTyped(char arg0) {
-		// TODO Auto-generated method stub
+	public boolean keyTyped(char key) {
 		return false;
 	}
 
@@ -103,12 +102,16 @@ public class OptionsScreen implements Screen, InputProcessor {
 		}
 		
 		batch.begin();
-		ObjectMap.Entries<String, Binding> it = optionButtons.entries();
+		ObjectMap.Entries<String, Rectangle> it = bindingButtons.entries();
+		// draw back button text
 		font.draw(batch, "Back", backButton.x, backButton.y+backButton.height);
+		// draw option texts
 		while(it.hasNext()) {
-			ObjectMap.Entry<String, Binding> entry = it.next();
-			Rectangle bounds = entry.value.getBounds();
+			ObjectMap.Entry<String, Rectangle> entry = it.next();
+			Rectangle bounds = entry.value;
 			font.draw(batch, entry.key, bounds.x, bounds.y+bounds.height);
+			Binding binding = game.getBindings().get(entry.key);
+			font.draw(batch, binding.character, bounds.x + 200.0f, bounds.y+bounds.height);
 		}
 		batch.end();
 	}
@@ -136,19 +139,17 @@ public class OptionsScreen implements Screen, InputProcessor {
 		font = new BitmapFont(Gdx.files.internal("assets/font.fnt"), Gdx.files.internal("assets/font.png"), false);
 		batch = new SpriteBatch();
 		shapeRenderer = new ShapeRenderer();
-		optionButtons = new ObjectMap<String, Binding>();
+		bindingButtons = new ObjectMap<String, Rectangle>();
 		backButton = new Rectangle(40.0f, 730.0f, 100.0f, 32.0f);
 		
 		// setup interface
-		ObjectMap.Entries<String, Integer> it = game.getBindings().entries();
+		ObjectMap.Entries<String, Binding> it = game.getBindings().entries();
 		float y = 700.0f;
 		while(it.hasNext()) {
-			ObjectMap.Entry<String, Integer> entry = it.next();
+			ObjectMap.Entry<String, Binding> entry = it.next();
 			Rectangle button = new Rectangle(300.0f, y, 150.0f, 32);
 			y -= 40;
-			Binding b = new Binding(entry.key, entry.value);
-			b.setBounds(button);
-			optionButtons.put(entry.key, b);
+			bindingButtons.put(entry.key, button);
 		}
 		mousePos = new Vector3();
 		camera = new OrthographicCamera();
@@ -163,11 +164,11 @@ public class OptionsScreen implements Screen, InputProcessor {
 		if(backButton.contains(mousePos.x, mousePos.y)) {
 			goBack();
 		}
-		ObjectMap.Entries<String, Binding> entries = optionButtons.entries();
+		ObjectMap.Entries<String, Rectangle> entries = bindingButtons.entries();
 		boolean focusedAnOption = false;
 		while(entries.hasNext()) {
-			ObjectMap.Entry<String, Binding> entry = entries.next();
-			Rectangle bounds = entry.value.getBounds();
+			ObjectMap.Entry<String, Rectangle> entry = entries.next();
+			Rectangle bounds = entry.value;
 			camera.unproject(mousePos.set(x, y, 0));
 			if(bounds.contains(mousePos.x, mousePos.y)) {
 				this.focused = true;
@@ -199,12 +200,12 @@ public class OptionsScreen implements Screen, InputProcessor {
 	}
 	
 	public void updateBinding(int keycode) {
-		ObjectMap<String, Integer> bindings = game.getBindings();
-		bindings.put(this.focusedAction, keycode);
-		System.out.println("Updating action: " + this.focusedAction + " to " + keycode);
-		Binding bind = optionButtons.get(this.focusedAction);
-		bind.keyCode = keycode;
-		optionButtons.put(this.focusedAction, bind);
+		ObjectMap<String, Binding> bindings = game.getBindings();
+		Binding binding = bindings.get(this.focusedAction);
+		binding.character = game.map.get(keycode);
+		binding.keyCode = keycode;
+		System.out.println("Updating action: " + this.focusedAction + " to " + keycode + " " + binding.character);
+		bindings.put(focusedAction, binding);
 	}
 
 }
