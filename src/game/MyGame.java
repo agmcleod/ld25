@@ -89,5 +89,6 @@ public class MyGame extends Game {
 		map.put(Input.Keys.NUM_7, "7");
 		map.put(Input.Keys.NUM_8, "8");
 		map.put(Input.Keys.NUM_9, "9");
+		System.out.println("V key: " + Input.Keys.V);
 	}
 }
